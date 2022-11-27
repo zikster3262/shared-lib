@@ -63,21 +63,25 @@ var InsertPageQuery = "INSERT INTO " + table + "(title, url, page_id, append) VA
 // InsertPage inserts interface input into Page database table with sqlx DB struct
 // Returns internal DB error on err
 func InsertPage(db *sqlx.DB, m interface{}) error {
+	mx.Lock()
 	_, err := db.NamedExec(InsertPageQuery, m)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
+	mx.Unlock()
 	return err
 }
 
-var GetPageQuery = "SELECT * FROM " + table + " WHERE manga_url = \"%v\""
+var GetPageQuery = "SELECT * FROM " + table + " WHERE title = \"%v\""
 
 // GetPage function takes sqlx DB struct and parameter string and returns PageSQL
-func GetPage(db *sqlx.DB, p string) (res PageSQL) {
+func GetPage(db *sqlx.DB, p string) (PageSQL, bool, error) {
+	var res PageSQL
 	err := db.Get(&res, fmt.Sprintf(GetPageQuery, p))
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
+		return PageSQL{}, false, err
 	}
-
-	return res
+	mx.Unlock()
+	return res, true, err
 }
