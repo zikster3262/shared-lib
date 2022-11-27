@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/zikster3262/shared-manga-lib/utils"
+	"github.com/zikster3262/shared-lib/utils"
 )
 
 var (
