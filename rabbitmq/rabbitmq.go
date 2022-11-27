@@ -16,13 +16,7 @@ var (
 
 func ConnectToRabbit() (*amqp.Channel, error) {
 
-	addr := os.Getenv("RABBITMQ_ADDRESS")
-
-	if addr == "" {
-		utils.FailOnError("rabbitmq", ErrNoRabbitMQAddressFound)
-	}
-
-	conn, err := amqp.Dial(addr)
+	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
 	ch, err := conn.Channel()
