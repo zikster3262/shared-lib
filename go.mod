@@ -1,4 +1,4 @@
-module github.com/zikster3262/shared-manga-lib
+module github.com/zikster3262/shared-lib
 
 go 1.19
 
