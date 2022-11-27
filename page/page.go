@@ -58,7 +58,7 @@ func GetPageID(db *sqlx.DB, id int64) (result PageSQL) {
 	return result
 }
 
-var InsertPageQuery = "INSERT INTO " + table + "(title, url, page_id, append) VALUES (:title, :url, (select id from db.sources WHERE id = :page_id), :append);`"
+var InsertPageQuery = "INSERT INTO " + table + "(title, url, page_id, append) VALUES (:title, :url, (select id from db.sources WHERE id = :page_id), :append);"
 
 // InsertPage inserts interface input into Page database table with sqlx DB struct
 // Returns internal DB error on err
