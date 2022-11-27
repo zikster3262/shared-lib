@@ -36,6 +36,7 @@ var selectAllPagesQuery = "SELECT * FROM " + table + ";"
 
 // GetAllPage func return all rows in PageSQL array from page table
 func GetAllPages(db *sqlx.DB) (p []PageSQL, err error) {
+
 	err = db.Select(&p, selectAllPagesQuery)
 	if err != nil {
 		utils.FailOnError("db", err)
@@ -76,6 +77,7 @@ var GetPageQuery = "SELECT * FROM " + table + " WHERE title = \"%v\""
 
 // GetPage function takes sqlx DB struct and parameter string and returns PageSQL
 func GetPage(db *sqlx.DB, p string) (PageSQL, bool, error) {
+	mx.Lock()
 	var res PageSQL
 	err := db.Get(&res, fmt.Sprintf(GetPageQuery, p))
 	if err != nil {
