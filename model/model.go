@@ -47,36 +47,13 @@ var (
 	ErrDBInternalError = errors.New("record was not created due to internal error")
 )
 
-// GetAllManga func return []MangaSQL sctruct with all results of mangapages database table
-func GetAllMangaPages(db *sqlx.DB) (mangas []MangaPageSQL, err error) {
-
-	err = db.Select(&mangas, "SELECT * FROM mangapages;")
+func (m Manga) InsertToMangaPage(db *sqlx.DB) error {
+	mx.Lock()
+	_, err := db.NamedExec(`INSERT INTO mangapage (title, url, manga_id, append)  VALUES (:title, :url, (select id from db.manga WHERE id = :page_id), :append);`, m)
 	if err != nil {
-		utils.FailOnError("db", err)
+		utils.FailOnError("coordinator", ErrDBInternalError)
 	}
-	return mangas, err
-
-}
-
-// GetManga function takes sqlx DB struct and parameter string
-// Return SQLManga result
-// If err is not
-func GetMangaPage(db *sqlx.DB, p string) (res MangaPageSQL) {
-	err := db.Get(&res, fmt.Sprintf("SELECT * FROM mangapages WHERE manga_url = \"%v\"", p))
-	if err != nil {
-		utils.LogWithInfo("db", "record does not exists in the database")
-	}
-
-	return res
-}
-
-// InsertManga inserts interface m into mangapages table with sqlx DB struct
-// Returns internal DB error on err
-func InsertMangaPage(db *sqlx.DB, m interface{}) error {
-	_, err := db.NamedExec(`INSERT INTO mangapages (manga_url, home_pattern, page_pattern, append) VALUES (:manga_url, :home_pattern, :page_pattern, :append);`, m)
-	if err != nil {
-		utils.FailOnError("db", ErrDBInternalError)
-	}
+	mx.Unlock()
 	return err
 }
 
