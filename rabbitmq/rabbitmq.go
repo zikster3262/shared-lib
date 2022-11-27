@@ -36,7 +36,7 @@ type RabbitMQClient struct {
 	ch *amqp.Channel
 }
 
-func CreateRabbitMQClient(r *amqp.Channel, name string) *RabbitMQClient {
+func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
 	return &RabbitMQClient{
 		ch: r,
 	}
