@@ -32,7 +32,7 @@ type SourceSQL struct {
 	Append       bool         `db:"append"`
 }
 
-var selectAllSourcesQuery = "SELECT * FROM " + table + ";"
+var selectAllSourcesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
 
 // GetAllSources func return all rows in SourceSQL array from page table
 func GetAllSources(db *sqlx.DB) (p []SourceSQL, err error) {
