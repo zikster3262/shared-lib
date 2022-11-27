@@ -32,7 +32,7 @@ type PageSQL struct {
 	Append     bool         `db:"append"`
 }
 
-var selectAllPagesQuery = "SELECT * FROM " + table + ";"
+var selectAllPagesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
 
 // GetAllPage func return all rows in PageSQL array from page table
 func GetAllPages(db *sqlx.DB) (p []PageSQL, err error) {
