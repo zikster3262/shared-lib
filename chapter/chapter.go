@@ -67,7 +67,7 @@ func GetChapter(db *sqlx.DB, p string) (ChapterSQL, bool, error) {
 
 	var res ChapterSQL
 	mx.Lock()
-	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE title = \"%v\"", p))
+	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE url = \"%v\"", p))
 	mx.Unlock()
 
 	if err != nil {
