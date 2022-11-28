@@ -56,10 +56,11 @@ var insertQuery = "INSERT INTO " + table + "(page_id, title, url, append) VALUES
 func (ch Chapter) InsertChapter(db *sqlx.DB) error {
 	mx.Lock()
 	_, err := db.NamedExec(insertQuery, ch)
-	mx.Unlock()
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
+
+	mx.Unlock()
 	return err
 
 }
