@@ -73,17 +73,17 @@ func InsertPage(db *sqlx.DB, m interface{}) error {
 	return err
 }
 
-var GetPageQuery = "SELECT * FROM " + table + " WHERE title = \"%v\""
-
 // GetPage function takes sqlx DB struct and parameter string and returns PageSQL
 func GetPage(db *sqlx.DB, p string) (PageSQL, bool, error) {
-	mx.Lock()
+
 	var res PageSQL
-	err := db.Get(&res, fmt.Sprintf(GetPageQuery, p))
+	mx.Lock()
+	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE title = \"%v\"", p))
+	mx.Unlock()
+
 	if err != nil {
-		utils.LogWithInfo("db", "record does not exists in the database")
 		return PageSQL{}, false, err
 	}
-	mx.Unlock()
+
 	return res, true, err
 }
