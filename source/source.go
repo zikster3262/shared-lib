@@ -44,12 +44,10 @@ func GetAllSources(db *sqlx.DB) (p []SourceSQL, err error) {
 
 }
 
-var selectSourceQuery = "SELECT * FROM " + table + " WHERE id = %v;"
-
 // Selects Source ID based on ID param
 func GetSourceID(db *sqlx.DB, id int64) (result SourceSQL) {
 	mx.Lock()
-	err := db.Get(&result, fmt.Sprintf(selectSourceQuery, id))
+	err := db.Get(&result, fmt.Sprintf("SELECT * FROM "+table+" WHERE id = %d;", id))
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
 	}

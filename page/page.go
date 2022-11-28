@@ -17,17 +17,17 @@ var (
 )
 
 type Page struct {
-	Title   string `json:"title"`
-	Url     string `json:"url"`
-	Page_Id int64  `json:"page_id"`
-	Append  bool   `json:"append"`
+	Title     string `json:"title"`
+	Url       string `json:"url"`
+	Source_Id int64  `json:"source_id"`
+	Append    bool   `json:"append"`
 }
 
 type PageSQL struct {
 	Id         int64        `db:"id"`
 	Title      string       `db:"title"`
 	Url        string       `db:"url"`
-	Page_Id    int          `db:"page_id"`
+	Source_Id  int          `db:"source_id"`
 	Date_Added sql.NullTime `db:"date_added"`
 	Append     bool         `db:"append"`
 }
@@ -59,13 +59,11 @@ func GetPageID(db *sqlx.DB, id int64) (result PageSQL) {
 	return result
 }
 
-var InsertPageQuery = "INSERT INTO " + table + "(title, url, page_id, append) VALUES (:title, :url, (select id from db.sources WHERE id = :page_id), :append);"
-
 // InsertPage inserts interface input into Page database table with sqlx DB struct
 // Returns internal DB error on err
-func InsertPage(db *sqlx.DB, m interface{}) error {
+func (p Page) InsertPage(db *sqlx.DB) error {
 	mx.Lock()
-	_, err := db.NamedExec(InsertPageQuery, m)
+	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, source_id, append) VALUES (:title, :url, (select id from db.sources WHERE id = :source_id), :append);", p)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
