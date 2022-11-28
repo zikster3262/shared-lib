@@ -31,9 +31,11 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 			if confirm.Ack {
 				// code when messages is confirmed
 				log.Printf("Confirmed")
+				utils.LogWithInfo("rabbitmq", "message was published to a queue")
 			} else {
 				// code when messages is nack-ed
 				log.Printf("Nacked")
+				utils.LogWithInfo("rabbitmq", "message was not published")
 			}
 		}
 	}()
