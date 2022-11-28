@@ -23,6 +23,21 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	ch, err := conn.Channel()
 	utils.FailOnError("rabbitmq", err)
 
+	confirms := make(chan amqp.Confirmation)
+	ch.NotifyPublish(confirms)
+	go func() {
+		for confirm := range confirms {
+			if confirm.Ack {
+				utils.LogWithInfo("rabbitmq", "Confirmed")
+			} else {
+				utils.LogWithInfo("rabbitmq", "Failed")
+			}
+		}
+	}()
+
+	err = ch.Confirm(false)
+	utils.FailOnError("rabbitmq", err)
+
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 	return ch, err
 }
