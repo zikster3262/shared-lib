@@ -3,7 +3,6 @@ package rabbitmq
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"time"
 
@@ -29,13 +28,9 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	go func() {
 		for confirm := range confirms {
 			if confirm.Ack {
-				// code when messages is confirmed
-				log.Printf("Confirmed")
-				utils.LogWithInfo("rabbitmq", "message was published to a queue")
+				utils.LogWithInfo("rabbitmq", "Confirmed")
 			} else {
-				// code when messages is nack-ed
-				log.Printf("Nacked")
-				utils.LogWithInfo("rabbitmq", "message was not published")
+				utils.LogWithInfo("rabbitmq", "Confirmed")
 			}
 		}
 	}()
