@@ -3,7 +3,9 @@ package rabbitmq
 import (
 	"context"
 	"errors"
+	"log"
 	"os"
+	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
 
@@ -22,6 +24,23 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	ch, err := conn.Channel()
 	utils.FailOnError("rabbitmq", err)
 
+	confirms := make(chan amqp.Confirmation)
+	ch.NotifyPublish(confirms)
+	go func() {
+		for confirm := range confirms {
+			if confirm.Ack {
+				// code when messages is confirmed
+				log.Printf("Confirmed")
+			} else {
+				// code when messages is nack-ed
+				log.Printf("Nacked")
+			}
+		}
+	}()
+
+	err = ch.Confirm(false)
+	utils.FailOnError("rabbitmq", err)
+
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 	return ch, err
 }
@@ -36,7 +55,10 @@ func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
 	}
 }
 
-func (rmq *RabbitMQClient) PublishMessage(name string, ctx context.Context, body []byte) error {
+func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	err := rmq.ch.PublishWithContext(ctx,
 		"",    // exchange
