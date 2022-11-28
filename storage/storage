@@ -1,4 +1,4 @@
-package clients3
+package storage
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func SetS3Config() *s3.Client {
+func CreateNewClient() *s3.Client {
 
 	minioURL := os.Getenv("S3_URL")
 	region := os.Getenv("AWS_REGION")
