@@ -62,3 +62,17 @@ func (ch Chapter) InsertChapter(db *sqlx.DB) error {
 	return err
 
 }
+
+func GetChapter(db *sqlx.DB, p string) (ChapterSQL, bool, error) {
+
+	var res ChapterSQL
+	mx.Lock()
+	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE title = \"%v\"", p))
+	mx.Unlock()
+
+	if err != nil {
+		return ChapterSQL{}, false, err
+	}
+
+	return res, true, err
+}
