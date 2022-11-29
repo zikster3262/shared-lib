@@ -33,16 +33,6 @@ type ChapterSQL struct {
 	Append          bool         `db:"append"`
 }
 
-func CreateNewChapter(page_id int64, title, ch, url string, append bool) Chapter {
-	return Chapter{
-		Page_id:         page_id,
-		Title:           title,
-		Url:             url,
-		Append:          append,
-		Chapter_Pattern: ch,
-	}
-}
-
 var selectAllQuery = fmt.Sprintf("SELECT * FROM %s;", table)
 
 func GetAllChapters(db *sqlx.DB) (p []ChapterSQL, err error) {
