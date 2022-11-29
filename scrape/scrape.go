@@ -55,7 +55,7 @@ func ScapeSource(mp source.SourceSQL) (m []page.Page) {
 	return m
 }
 
-func ScapePage(p page.PageSQL, sid int64) (m []page.PageSQL) {
+func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
 	// Request the HTML page.
 	res, err := http.Get(p.Url)
 	if err != nil {
@@ -78,7 +78,7 @@ func ScapePage(p page.PageSQL, sid int64) (m []page.PageSQL) {
 		href, _ := s.Attr("href")
 
 		mn := page.PageSQL{
-			Id:        p.Id,
+			Id:        page_id,
 			Url:       href,
 			Title:     p.Title,
 			Source_Id: int(sid),
