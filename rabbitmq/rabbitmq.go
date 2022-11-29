@@ -35,8 +35,8 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	// 	}
 	// }()
 
-	err = ch.Confirm(false)
-	utils.FailOnError("rabbitmq", err)
+	// err = ch.Confirm(false)
+	// utils.FailOnError("rabbitmq", err)
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 	return ch, err
