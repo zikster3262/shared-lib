@@ -17,18 +17,20 @@ var (
 )
 
 type Chapter struct {
-	Page_id int64  `json:"page_id"`
-	Title   string `json:"title"`
-	Url     string `json:"url"`
-	Append  bool   `json:"append"`
+	Page_id         int64  `json:"page_id"`
+	Title           string `json:"title"`
+	Url             string `json:"url"`
+	Chapter_Pattern string `json:"chapter_pattern"`
+	Append          bool   `json:"append"`
 }
 
 type ChapterSQL struct {
-	Page_id    int64        `db:"page_id"`
-	Title      string       `db:"title"`
-	Url        string       `db:"url"`
-	Date_Added sql.NullTime `db:"date_added"`
-	Append     bool         `db:"append"`
+	Page_id         int64        `db:"page_id"`
+	Title           string       `db:"title"`
+	Url             string       `db:"url"`
+	Chapter_Pattern string       `json:"chapter_pattern"`
+	Date_Added      sql.NullTime `db:"date_added"`
+	Append          bool         `db:"append"`
 }
 
 func CreateNewChapter(page_id int64, title, url string, append bool) Chapter {

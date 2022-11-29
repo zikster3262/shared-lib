@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/zikster3262/shared-lib/chapter"
 	"github.com/zikster3262/shared-lib/page"
 	"github.com/zikster3262/shared-lib/source"
 )
@@ -90,4 +91,33 @@ func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
 	})
 
 	return m
+}
+
+func ScapeChapter(cha chapter.Chapter) (chapters []chapter.Chapter) {
+	// Request the HTML page.
+	res, err := http.Get(cha.Url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Find the review items
+	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Attr("src")
+
+		chap := cha
+		chap.Url = href
+		chapters = append(chapters, chap)
+
+	})
+	return chapters
 }

@@ -17,19 +17,21 @@ var (
 )
 
 type Source struct {
-	Manga_URL    string `json:"manga_url"`
-	Home_Pattern string `json:"home_pattern"`
-	Page_Pattern string `json:"page_pattern"`
-	Append       bool   `json:"append"`
+	Manga_URL       string `json:"manga_url"`
+	Home_Pattern    string `json:"home_pattern"`
+	Page_Pattern    string `json:"page_pattern"`
+	Chapter_Pattern string `json:"chapter_pattern"`
+	Append          bool   `json:"append"`
 }
 
 type SourceSQL struct {
-	Id           int64        `db:"id"`
-	Manga_URL    string       `db:"manga_url"`
-	Home_Pattern string       `db:"home_pattern"`
-	Page_Pattern string       `db:"page_pattern"`
-	Date_Added   sql.NullTime `db:"date_added"`
-	Append       bool         `db:"append"`
+	Id              int64        `db:"id"`
+	Manga_URL       string       `db:"manga_url"`
+	Home_Pattern    string       `db:"home_pattern"`
+	Page_Pattern    string       `db:"page_pattern"`
+	Chapter_Pattern string       `json:"chapter_pattern"`
+	Date_Added      sql.NullTime `db:"date_added"`
+	Append          bool         `db:"append"`
 }
 
 var selectAllSourcesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
