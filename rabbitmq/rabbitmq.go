@@ -8,6 +8,7 @@ import (
 
 	"github.com/zikster3262/shared-lib/utils"
 
+	"github.com/rabbitmq/amqp091-go"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -19,13 +20,6 @@ func ConnectToRabbit() (*amqp.Connection, error) {
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
-
-	// defer conn.Close()
-
-	// ch, err := conn.Channel()
-	// utils.FailOnError("rabbitmq", err)
-
-	// defer ch.Close()
 
 	// confirms := make(chan amqp.Confirmation)
 	// ch.NotifyPublish(confirms)
@@ -47,10 +41,10 @@ func ConnectToRabbit() (*amqp.Connection, error) {
 }
 
 type RabbitMQClient struct {
-	channel *amqp.Channel
+	channel *amqp091.Connection
 }
 
-func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
+func CreateRabbitMQClient(r *amqp091.Connection) *RabbitMQClient {
 	return &RabbitMQClient{
 		channel: r,
 	}
@@ -61,7 +55,14 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := rmq.channel.PublishWithContext(ctx,
+	defer rmq.channel.Close()
+
+	ch, err := rmq.channel.Channel()
+	utils.FailOnError("rabbitmq", err)
+
+	defer ch.Close()
+
+	err = ch.PublishWithContext(ctx,
 		"",    // exchange
 		name,  // routing key
 		false, // mandatory
@@ -77,7 +78,14 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 
 func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 
-	msgs, err := rmq.channel.Consume(
+	defer rmq.channel.Close()
+
+	ch, err := rmq.channel.Channel()
+	utils.FailOnError("rabbitmq", err)
+
+	defer ch.Close()
+
+	msgs, err := ch.Consume(
 		name,  // queue
 		"",    // consumer
 		true,  // auto-ack
