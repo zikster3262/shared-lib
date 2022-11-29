@@ -56,7 +56,7 @@ func GetAllChapters(db *sqlx.DB) (p []ChapterSQL, err error) {
 
 func (ch Chapter) InsertChapter(db *sqlx.DB) error {
 	mx.Lock()
-	_, err := db.NamedExec("INSERT INTO "+table+"(page_id, title, url, append, chapter_pattern) VALUES ((select id from db.pages WHERE id = :page_id), :title, :url, :append, :chapter_pattern);", ch)
+	_, err := db.NamedExec("INSERT INTO "+table+"(page_id, title, url, chapter_pattern, append) VALUES ((select id from db.pages WHERE id = :page_id), :title, :url, :chapter_pattern, :append);", ch)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
