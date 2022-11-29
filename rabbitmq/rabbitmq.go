@@ -15,17 +15,17 @@ var (
 	ErrNoRabbitMQAddressFound = errors.New("no rabbitMQ address provided")
 )
 
-func ConnectToRabbit() (*amqp.Channel, error) {
+func ConnectToRabbit() (*amqp.Connection, error) {
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
-	defer conn.Close()
+	// defer conn.Close()
 
-	ch, err := conn.Channel()
-	utils.FailOnError("rabbitmq", err)
+	// ch, err := conn.Channel()
+	// utils.FailOnError("rabbitmq", err)
 
-	defer ch.Close()
+	// defer ch.Close()
 
 	// confirms := make(chan amqp.Confirmation)
 	// ch.NotifyPublish(confirms)
@@ -43,7 +43,7 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	// utils.FailOnError("rabbitmq", err)
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
-	return ch, err
+	return conn, err
 }
 
 type RabbitMQClient struct {
