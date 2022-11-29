@@ -28,7 +28,7 @@ type ChapterSQL struct {
 	Page_id         int64        `db:"page_id"`
 	Title           string       `db:"title"`
 	Url             string       `db:"url"`
-	Chapter_Pattern string       `json:"chapter_pattern"`
+	Chapter_Pattern string       `db:"chapter_pattern"`
 	Date_Added      sql.NullTime `db:"date_added"`
 	Append          bool         `db:"append"`
 }
