@@ -43,12 +43,12 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 }
 
 type RabbitMQClient struct {
-	ch *amqp.Channel
+	channel *amqp.Channel
 }
 
 func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
 	return &RabbitMQClient{
-		ch: r,
+		channel: r,
 	}
 }
 
@@ -57,7 +57,7 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := rmq.ch.PublishWithContext(ctx,
+	err := rmq.channel.PublishWithContext(ctx,
 		"",    // exchange
 		name,  // routing key
 		false, // mandatory
@@ -73,7 +73,7 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 
 func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 
-	msgs, err := rmq.ch.Consume(
+	msgs, err := rmq.channel.Consume(
 		name,  // queue
 		"",    // consumer
 		true,  // auto-ack
