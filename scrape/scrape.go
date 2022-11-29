@@ -38,11 +38,12 @@ func ScapeSource(mp source.SourceSQL) (m []page.Page) {
 
 		// create Page
 		mn := page.Page{
-			Url:          v,
-			Title:        t,
-			Source_Id:    mp.Id,
-			Append:       mp.Append,
-			Page_Pattern: mp.Page_Pattern,
+			Url:             v,
+			Title:           t,
+			Source_Id:       mp.Id,
+			Append:          mp.Append,
+			Chapter_Pattern: mp.Chapter_Pattern,
+			Page_Pattern:    mp.Page_Pattern,
 		}
 
 		if mp.Append {
@@ -79,11 +80,12 @@ func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
 		href, _ := s.Attr("href")
 
 		mn := page.PageSQL{
-			Id:        page_id,
-			Url:       href,
-			Title:     p.Title,
-			Source_Id: int(sid),
-			Append:    p.Append,
+			Id:              page_id,
+			Url:             href,
+			Title:           p.Title,
+			Source_Id:       int(sid),
+			Chapter_Pattern: p.Chapter_Pattern,
+			Append:          p.Append,
 		}
 
 		m = append(m, mn)

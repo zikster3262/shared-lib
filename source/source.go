@@ -58,7 +58,7 @@ func GetSourceID(db *sqlx.DB, id int64) (result SourceSQL) {
 	return result
 }
 
-var InsertSourceQuery = "INSERT INTO " + table + "(manga_url, home_pattern, page_pattern, append) VALUES (:manga_url, :home_pattern, :page_pattern, :append);"
+var InsertSourceQuery = "INSERT INTO " + table + "(manga_url, home_pattern, page_pattern, append, chapter_pattern) VALUES (:manga_url, :home_pattern, :page_pattern, :append, :chapter_pattern);"
 
 // InsertSource inserts interface input into source database table with sqlx DB struct
 // Returns internal DB error on err

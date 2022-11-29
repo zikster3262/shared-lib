@@ -67,7 +67,7 @@ func GetPageID(db *sqlx.DB, id int64) (result PageSQL) {
 // Returns internal DB error on err
 func (p Page) InsertPage(db *sqlx.DB) error {
 	mx.Lock()
-	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, source_id, append) VALUES (:title, :url, (select id from db.sources WHERE id = :source_id), :append);", p)
+	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, source_id, append, chapter_pattern) VALUES (:title, :url, (select id from db.sources WHERE id = :source_id), :append, :chapter_pattern);", p)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
