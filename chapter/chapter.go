@@ -33,7 +33,7 @@ type ChapterSQL struct {
 	Append          bool         `db:"append"`
 }
 
-func CreateNewChapter(page_id int64, title, url, ch string, append bool) Chapter {
+func CreateNewChapter(page_id int64, title, ch, url string, append bool) Chapter {
 	return Chapter{
 		Page_id:         page_id,
 		Title:           title,
