@@ -20,8 +20,12 @@ func ConnectToRabbit() (*amqp.Channel, error) {
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
+	defer conn.Close()
+
 	ch, err := conn.Channel()
 	utils.FailOnError("rabbitmq", err)
+
+	defer ch.Close()
 
 	// confirms := make(chan amqp.Confirmation)
 	// ch.NotifyPublish(confirms)
