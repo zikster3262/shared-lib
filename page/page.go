@@ -17,19 +17,21 @@ var (
 )
 
 type Page struct {
-	Title     string `json:"title"`
-	Url       string `json:"url"`
-	Source_Id int64  `json:"source_id"`
-	Append    bool   `json:"append"`
+	Title        string `json:"title"`
+	Url          string `json:"url"`
+	Source_Id    int64  `json:"source_id"`
+	Page_Pattern string `json:"page_pattern"`
+	Append       bool   `json:"append"`
 }
 
 type PageSQL struct {
-	Id         int64        `db:"id"`
-	Title      string       `db:"title"`
-	Url        string       `db:"url"`
-	Source_Id  int          `db:"source_id"`
-	Date_Added sql.NullTime `db:"date_added"`
-	Append     bool         `db:"append"`
+	Id           int64        `db:"id"`
+	Title        string       `db:"title"`
+	Url          string       `db:"url"`
+	Source_Id    int          `db:"source_id"`
+	Page_Pattern string       `db:"page_pattern"`
+	Date_Added   sql.NullTime `db:"date_added"`
+	Append       bool         `db:"append"`
 }
 
 var selectAllPagesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
