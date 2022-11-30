@@ -28,6 +28,8 @@ func ConnectToRabbit() (*RabbitMQClient, error) {
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 
+	conn.Close()
+
 	return &RabbitMQClient{
 		connection: conn,
 	}, err
