@@ -38,7 +38,7 @@ type RabbitMQClient struct {
 	channels   []*amqp.Channel
 }
 
-func (rmq *RabbitMQClient) createChannel() error {
+func (rmq *RabbitMQClient) CreateChannel() error {
 
 	rabbitmqLockRW.Lock()
 
