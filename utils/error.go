@@ -12,3 +12,9 @@ func LogWithInfo(cmp, msg string) {
 	log.Info().Msgf("%s, %s", cmp, msg)
 
 }
+
+func FailOnCmpError(svc, cmp string, err error) {
+	if err != nil {
+		log.Error().Msgf("[%s] [%s]: %s", svc, cmp, err.Error())
+	}
+}

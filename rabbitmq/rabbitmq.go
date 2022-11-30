@@ -24,7 +24,7 @@ func ConnectToRabbit() (*RabbitMQClient, error) {
 	defer rabbitmqLock.Unlock()
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
-	utils.FailOnError("rabbitmq", err)
+	utils.FailOnCmpError("rabbitmq", "connection", err)
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 
@@ -44,7 +44,7 @@ func (rmq *RabbitMQClient) CreateChannel() error {
 
 	chann, err := rmq.connection.Channel()
 	if err != nil {
-		return err
+		utils.FailOnCmpError("rabbitmq", "channel", err)
 	}
 	rmq.channels = append(rmq.channels, chann)
 
@@ -72,7 +72,7 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 				Body:         body,
 				DeliveryMode: amqp.Persistent,
 			})
-		utils.FailOnError("rabbitmq", err)
+		utils.FailOnCmpError("rabbitmq", "publish", err)
 
 		ch.Close()
 	}
@@ -95,6 +95,8 @@ func (rmq *RabbitMQClient) Consume(name string) (msgs <-chan amqp.Delivery, err 
 			false, // no-wait
 			nil,   // args
 		)
+
+		utils.FailOnCmpError("rabbitmq", "consume", err)
 
 		ch.Close()
 	}
