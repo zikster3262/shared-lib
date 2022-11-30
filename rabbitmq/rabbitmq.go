@@ -85,6 +85,8 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 
 func (rmq *RabbitMQClient) Consume(name string) (msgs <-chan amqp.Delivery, err error) {
 
+	var channel *amqp.Channel
+
 	rabbitmqLockRW.Lock()
 
 	for _, ch := range rmq.channels {
@@ -99,9 +101,10 @@ func (rmq *RabbitMQClient) Consume(name string) (msgs <-chan amqp.Delivery, err 
 		)
 
 		utils.FailOnCmpError("rabbitmq", "consume", err)
-
-		ch.Close()
+		channel = ch
 	}
+
+	channel.Close()
 
 	rabbitmqLockRW.Unlock()
 
