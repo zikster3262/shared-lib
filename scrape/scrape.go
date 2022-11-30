@@ -121,9 +121,10 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 		href, _ := s.Attr("src")
 
 		img := img.Image{
-			Title:   cha.Title,
-			Url:     href,
-			Chapter: chapter,
+			Title:    cha.Title,
+			Url:      href,
+			Chapter:  chapter,
+			Filename: utils.GetFileName(href),
 		}
 		images = append(images, img)
 

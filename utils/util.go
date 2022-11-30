@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"regexp"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -28,4 +29,9 @@ func GetIDFromChapterURL(url string) string {
 		return res[0]
 	}
 
+}
+
+func GetFileName(url string) string {
+	result := strings.LastIndex(url, "/")
+	return url[result+1:]
 }
