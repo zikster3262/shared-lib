@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
@@ -13,43 +14,27 @@ import (
 
 var (
 	ErrNoRabbitMQAddressFound = errors.New("no rabbitMQ address provided")
+	rabbitmqLock              sync.Mutex
+	rabbitmqLockRW            sync.RWMutex
 )
 
-func ConnectToRabbit() (*amqp.Channel, error) {
+func ConnectToRabbit() (*RabbitMQClient, error) {
+
+	rabbitmqLock.Lock()
+	defer rabbitmqLock.Unlock()
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
-	ch, err := conn.Channel()
-	utils.FailOnError("rabbitmq", err)
-
-	// confirms := make(chan amqp.Confirmation)
-	// ch.NotifyPublish(confirms)
-	// go func() {
-	// 	for confirm := range confirms {
-	// 		if confirm.Ack {
-	// 			utils.LogWithInfo("rabbitmq", "Confirmed")
-	// 		} else {
-	// 			utils.LogWithInfo("rabbitmq", "Failed")
-	// 		}
-	// 	}
-	// }()
-
-	// err = ch.Confirm(false)
-	// utils.FailOnError("rabbitmq", err)
-
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
-	return ch, err
+
+	return &RabbitMQClient{
+		connection: conn,
+	}, err
 }
 
 type RabbitMQClient struct {
-	channel *amqp.Channel
-}
-
-func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
-	return &RabbitMQClient{
-		channel: r,
-	}
+	connection *amqp.Connection
 }
 
 func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
@@ -57,7 +42,14 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := rmq.channel.PublishWithContext(ctx,
+	rabbitmqLockRW.Lock()
+
+	chann, err := rmq.connection.Channel()
+	if err != nil {
+		return err
+	}
+
+	err = chann.PublishWithContext(ctx,
 		"",    // exchange
 		name,  // routing key
 		false, // mandatory
@@ -68,12 +60,21 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 			DeliveryMode: amqp.Persistent,
 		})
 	utils.FailOnError("rabbitmq", err)
+
+	rabbitmqLockRW.Unlock()
 	return err
 }
 
 func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 
-	msgs, err := rmq.channel.Consume(
+	rabbitmqLockRW.Lock()
+
+	chann, err := rmq.connection.Channel()
+	if err != nil {
+		return nil, err
+	}
+
+	msgs, err := chann.Consume(
 		name,  // queue
 		"",    // consumer
 		true,  // auto-ack
@@ -82,6 +83,8 @@ func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 		false, // no-wait
 		nil,   // args
 	)
+
+	rabbitmqLockRW.Unlock()
 
 	return msgs, err
 }
