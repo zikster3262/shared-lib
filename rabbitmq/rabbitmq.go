@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
 
@@ -14,31 +15,33 @@ var (
 	ErrNoRabbitMQAddressFound = errors.New("no rabbitMQ address provided")
 )
 
-func ConnectToRabbit() (*amqp.Channel, error) {
+type RabbitMQClient struct {
+	conn *amqp.Connection
+}
+
+func CreateRabbitMQClient() *RabbitMQClient {
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
-	ch, err := conn.Channel()
-	utils.FailOnError("rabbitmq", err)
-
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
-	return ch, err
-}
-
-type RabbitMQClient struct {
-	channel *amqp.Channel
-}
-
-func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
 	return &RabbitMQClient{
-		channel: r,
+		conn: conn,
 	}
 }
 
-func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body []byte) error {
+func (r *RabbitMQClient) CreateChannel() *amqp.Channel {
+	ch, err := r.conn.Channel()
+	utils.FailOnError("rabbitmq", err)
+	return ch
+}
 
-	err := rmq.channel.PublishWithContext(ctx,
+func PublishMessage(channel *amqp.Channel, name string, body []byte) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := channel.PublishWithContext(ctx,
 		"",    // exchange
 		name,  // routing key
 		false, // mandatory
@@ -52,9 +55,9 @@ func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body
 	return err
 }
 
-func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
+func Consume(channel *amqp.Channel, name string) (<-chan amqp.Delivery, error) {
 
-	msgs, err := rmq.channel.Consume(
+	msgs, err := channel.Consume(
 		name,  // queue
 		"",    // consumer
 		true,  // auto-ack
@@ -64,7 +67,15 @@ func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 		nil,   // args
 	)
 
-	return msgs, err
+	for {
+		_, ok := <-msgs
+		if !ok {
+			return nil, nil
+		} else {
+			return msgs, err
+		}
+	}
+
 }
 
 func (rmq *RabbitMQClient) Close() {
