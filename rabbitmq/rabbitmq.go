@@ -8,6 +8,7 @@ import (
 
 	"github.com/zikster3262/shared-lib/utils"
 
+	"github.com/rabbitmq/amqp091-go"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -17,7 +18,7 @@ var (
 	rabbitmqLockRW            sync.RWMutex
 )
 
-func ConnectToRabbit() (*RabbitMQClient, error) {
+func ConnectToRabbit() (*amqp091.Connection, error) {
 
 	rabbitmqLock.Lock()
 	defer rabbitmqLock.Unlock()
@@ -27,16 +28,12 @@ func ConnectToRabbit() (*RabbitMQClient, error) {
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
 
-	conn.Close()
-
-	return &RabbitMQClient{
-		connection: conn,
-	}, err
+	return conn, err
 }
 
 type RabbitMQClient struct {
 	connection *amqp.Connection
-	channels   []*amqp.Channel
+	channel    *amqp091.Channel
 }
 
 func (rmq *RabbitMQClient) CreateChannel() (*amqp.Channel, error) {
@@ -47,7 +44,6 @@ func (rmq *RabbitMQClient) CreateChannel() (*amqp.Channel, error) {
 	if err != nil {
 		utils.FailOnCmpError("rabbitmq", "channel", err)
 	}
-	rmq.channels = append(rmq.channels, chann)
 
 	rabbitmqLockRW.Unlock()
 
