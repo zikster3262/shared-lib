@@ -1,7 +1,6 @@
 package scrape
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/zikster3262/shared-lib/img"
 	"github.com/zikster3262/shared-lib/page"
 	"github.com/zikster3262/shared-lib/source"
-	"github.com/zikster3262/shared-lib/utils"
 )
 
 func ScapeSource(mp source.SourceSQL) (m []page.Page) {
@@ -118,11 +116,11 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 	// Find the review items
 	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("src")
-		fmt.Printf("chapter: %v", utils.GetIDFromChapterURL(cha.Url))
 
 		img := img.Image{
-			Title: cha.Title,
-			Url:   href,
+			Title:   cha.Title,
+			Url:     href,
+			Chapter: cha.Url,
 		}
 		images = append(images, img)
 
