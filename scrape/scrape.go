@@ -6,8 +6,10 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/zikster3262/shared-lib/chapter"
+	"github.com/zikster3262/shared-lib/img"
 	"github.com/zikster3262/shared-lib/page"
 	"github.com/zikster3262/shared-lib/source"
+	"github.com/zikster3262/shared-lib/utils"
 )
 
 func ScapeSource(mp source.SourceSQL) (m []page.Page) {
@@ -95,7 +97,7 @@ func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
 	return m
 }
 
-func ScapeChapter(cha chapter.Chapter) (chapters []chapter.Chapter) {
+func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 	// Request the HTML page.
 	res, err := http.Get(cha.Url)
 	if err != nil {
@@ -118,8 +120,13 @@ func ScapeChapter(cha chapter.Chapter) (chapters []chapter.Chapter) {
 
 		chap := cha
 		chap.Url = href
-		chapters = append(chapters, chap)
+		img := img.Image{
+			Title:   cha.Title,
+			Url:     href,
+			Chapter: utils.GetIDFromChapterURL(cha.Url),
+		}
+		images = append(images, img)
 
 	})
-	return chapters
+	return images
 }
