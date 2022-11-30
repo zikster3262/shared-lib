@@ -4,57 +4,60 @@ import (
 	"context"
 	"errors"
 	"os"
-	"sync"
+	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
 
-	"github.com/rabbitmq/amqp091-go"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var (
 	ErrNoRabbitMQAddressFound = errors.New("no rabbitMQ address provided")
-	rabbitmqLock              sync.Mutex
-	rabbitmqLockRW            sync.RWMutex
 )
 
-func ConnectToRabbit() (*amqp091.Connection, error) {
-
-	rabbitmqLock.Lock()
-	defer rabbitmqLock.Unlock()
+func ConnectToRabbit() (*amqp.Channel, error) {
 
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
-	utils.FailOnCmpError("rabbitmq", "connection", err)
+	utils.FailOnError("rabbitmq", err)
+
+	ch, err := conn.Channel()
+	utils.FailOnError("rabbitmq", err)
+
+	// confirms := make(chan amqp.Confirmation)
+	// ch.NotifyPublish(confirms)
+	// go func() {
+	// 	for confirm := range confirms {
+	// 		if confirm.Ack {
+	// 			utils.LogWithInfo("rabbitmq", "Confirmed")
+	// 		} else {
+	// 			utils.LogWithInfo("rabbitmq", "Failed")
+	// 		}
+	// 	}
+	// }()
+
+	// err = ch.Confirm(false)
+	// utils.FailOnError("rabbitmq", err)
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
-
-	return conn, err
+	return ch, err
 }
 
 type RabbitMQClient struct {
-	connection *amqp.Connection
-	channel    *amqp091.Channel
+	channel *amqp.Channel
 }
 
-func (rmq *RabbitMQClient) CreateChannel() (*amqp.Channel, error) {
-
-	rabbitmqLockRW.Lock()
-
-	chann, err := rmq.connection.Channel()
-	if err != nil {
-		utils.FailOnCmpError("rabbitmq", "channel", err)
+func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
+	return &RabbitMQClient{
+		channel: r,
 	}
-
-	rabbitmqLockRW.Unlock()
-
-	return chann, err
 }
 
-func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body []byte, ch *amqp.Channel) error {
+func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 
-	rabbitmqLockRW.Lock()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	err := ch.PublishWithContext(ctx,
+	err := rmq.channel.PublishWithContext(ctx,
 		"",    // exchange
 		name,  // routing key
 		false, // mandatory
@@ -64,17 +67,13 @@ func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body
 			Body:         body,
 			DeliveryMode: amqp.Persistent,
 		})
-	utils.FailOnCmpError("rabbitmq", "publish", err)
-
-	rabbitmqLockRW.Unlock()
+	utils.FailOnError("rabbitmq", err)
 	return err
 }
 
-func (rmq *RabbitMQClient) Consume(name string, ch *amqp.Channel) (msgs <-chan amqp.Delivery, err error) {
+func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
 
-	rabbitmqLockRW.Lock()
-
-	msgs, err = ch.Consume(
+	msgs, err := rmq.channel.Consume(
 		name,  // queue
 		"",    // consumer
 		true,  // auto-ack
@@ -83,10 +82,6 @@ func (rmq *RabbitMQClient) Consume(name string, ch *amqp.Channel) (msgs <-chan a
 		false, // no-wait
 		nil,   // args
 	)
-
-	utils.FailOnCmpError("rabbitmq", "consume", err)
-
-	rabbitmqLockRW.Unlock()
 
 	return msgs, err
 }
