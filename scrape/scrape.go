@@ -118,12 +118,11 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 	// Find the review items
 	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("src")
-		fmt.Println(cha.Url)
+		fmt.Printf("chapter: %v", utils.GetIDFromChapterURL(cha.Url))
 
 		img := img.Image{
-			Title:   cha.Title,
-			Url:     href,
-			Chapter: utils.GetIDFromChapterURL(cha.Url),
+			Title: cha.Title,
+			Url:   href,
 		}
 		images = append(images, img)
 
