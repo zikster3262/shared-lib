@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -117,9 +118,8 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 	// Find the review items
 	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("src")
+		fmt.Println(cha.Url)
 
-		chap := cha
-		chap.Url = href
 		img := img.Image{
 			Title:   cha.Title,
 			Url:     href,
