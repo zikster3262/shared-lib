@@ -9,6 +9,7 @@ import (
 	"github.com/zikster3262/shared-lib/img"
 	"github.com/zikster3262/shared-lib/page"
 	"github.com/zikster3262/shared-lib/source"
+	"github.com/zikster3262/shared-lib/utils"
 )
 
 func ScapeSource(mp source.SourceSQL) (m []page.Page) {
@@ -113,6 +114,8 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 		log.Fatal(err)
 	}
 
+	chapter := utils.GetIDFromChapterURL(cha.Url)
+
 	// Find the review items
 	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("src")
@@ -120,7 +123,7 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 		img := img.Image{
 			Title:   cha.Title,
 			Url:     href,
-			Chapter: cha.Url,
+			Chapter: chapter,
 		}
 		images = append(images, img)
 
