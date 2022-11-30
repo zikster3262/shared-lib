@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
 
@@ -37,10 +36,7 @@ func CreateRabbitMQClient(r *amqp.Channel) *RabbitMQClient {
 	}
 }
 
-func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body []byte) error {
 
 	err := rmq.channel.PublishWithContext(ctx,
 		"",    // exchange
