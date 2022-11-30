@@ -35,12 +35,10 @@ func ConnectToRabbit() (*RabbitMQClient, error) {
 
 type RabbitMQClient struct {
 	connection *amqp.Connection
+	channels   []*amqp.Channel
 }
 
-func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+func (rmq *RabbitMQClient) createChannel() error {
 
 	rabbitmqLockRW.Lock()
 
@@ -48,41 +46,58 @@ func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
 	if err != nil {
 		return err
 	}
+	rmq.channels = append(rmq.channels, chann)
 
-	err = chann.PublishWithContext(ctx,
-		"",    // exchange
-		name,  // routing key
-		false, // mandatory
-		false, // immediate
-		amqp.Publishing{
-			ContentType:  "application/json",
-			Body:         body,
-			DeliveryMode: amqp.Persistent,
-		})
-	utils.FailOnError("rabbitmq", err)
+	rabbitmqLockRW.Unlock()
+
+	return err
+}
+
+func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var err error
+
+	rabbitmqLockRW.Lock()
+
+	for _, ch := range rmq.channels {
+		err = ch.PublishWithContext(ctx,
+			"",    // exchange
+			name,  // routing key
+			false, // mandatory
+			false, // immediate
+			amqp.Publishing{
+				ContentType:  "application/json",
+				Body:         body,
+				DeliveryMode: amqp.Persistent,
+			})
+		utils.FailOnError("rabbitmq", err)
+
+		ch.Close()
+	}
 
 	rabbitmqLockRW.Unlock()
 	return err
 }
 
-func (rmq *RabbitMQClient) Consume(name string) (<-chan amqp.Delivery, error) {
+func (rmq *RabbitMQClient) Consume(name string) (msgs <-chan amqp.Delivery, err error) {
 
 	rabbitmqLockRW.Lock()
 
-	chann, err := rmq.connection.Channel()
-	if err != nil {
-		return nil, err
-	}
+	for _, ch := range rmq.channels {
+		msgs, err = ch.Consume(
+			name,  // queue
+			"",    // consumer
+			true,  // auto-ack
+			false, // exclusive
+			false, // no-local
+			false, // no-wait
+			nil,   // args
+		)
 
-	msgs, err := chann.Consume(
-		name,  // queue
-		"",    // consumer
-		true,  // auto-ack
-		false, // exclusive
-		false, // no-local
-		false, // no-wait
-		nil,   // args
-	)
+		ch.Close()
+	}
 
 	rabbitmqLockRW.Unlock()
 
