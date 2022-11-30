@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/zikster3262/shared-lib/utils"
 
@@ -40,7 +39,7 @@ type RabbitMQClient struct {
 	channels   []*amqp.Channel
 }
 
-func (rmq *RabbitMQClient) CreateChannel() error {
+func (rmq *RabbitMQClient) CreateChannel() (*amqp.Channel, error) {
 
 	rabbitmqLockRW.Lock()
 
@@ -52,59 +51,44 @@ func (rmq *RabbitMQClient) CreateChannel() error {
 
 	rabbitmqLockRW.Unlock()
 
-	return err
+	return chann, err
 }
 
-func (rmq *RabbitMQClient) PublishMessage(name string, body []byte) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	var err error
+func (rmq *RabbitMQClient) PublishMessage(ctx context.Context, name string, body []byte, ch *amqp.Channel) error {
 
 	rabbitmqLockRW.Lock()
 
-	for _, ch := range rmq.channels {
-		err = ch.PublishWithContext(ctx,
-			"",    // exchange
-			name,  // routing key
-			false, // mandatory
-			false, // immediate
-			amqp.Publishing{
-				ContentType:  "application/json",
-				Body:         body,
-				DeliveryMode: amqp.Persistent,
-			})
-		utils.FailOnCmpError("rabbitmq", "publish", err)
-
-		ch.Close()
-	}
+	err := ch.PublishWithContext(ctx,
+		"",    // exchange
+		name,  // routing key
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			ContentType:  "application/json",
+			Body:         body,
+			DeliveryMode: amqp.Persistent,
+		})
+	utils.FailOnCmpError("rabbitmq", "publish", err)
 
 	rabbitmqLockRW.Unlock()
 	return err
 }
 
-func (rmq *RabbitMQClient) Consume(name string) (msgs <-chan amqp.Delivery, err error) {
-
-	var channel *amqp.Channel
+func (rmq *RabbitMQClient) Consume(name string, ch *amqp.Channel) (msgs <-chan amqp.Delivery, err error) {
 
 	rabbitmqLockRW.Lock()
 
-	for _, ch := range rmq.channels {
-		msgs, err = ch.Consume(
-			name,  // queue
-			"",    // consumer
-			true,  // auto-ack
-			false, // exclusive
-			false, // no-local
-			false, // no-wait
-			nil,   // args
-		)
+	msgs, err = ch.Consume(
+		name,  // queue
+		"",    // consumer
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
 
-		utils.FailOnCmpError("rabbitmq", "consume", err)
-		channel = ch
-	}
-
-	channel.Close()
+	utils.FailOnCmpError("rabbitmq", "consume", err)
 
 	rabbitmqLockRW.Unlock()
 
