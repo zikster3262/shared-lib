@@ -19,14 +19,14 @@ func (i Image) DownloadFile() []byte {
 	var client http.Client
 	resp, err := client.Get(i.Url)
 	if err != nil {
-		utils.FailOnCmpError("shared", "img", err)
+		utils.FailOnCmpError("shared", "img-get", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			utils.FailOnCmpError("shared", "img", err)
+			utils.FailOnCmpError("shared", "img-res-code", err)
 		}
 
 		return bodyBytes
