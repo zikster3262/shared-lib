@@ -11,61 +11,66 @@ import (
 )
 
 var (
-	table              = "chapters"
 	mx                 sync.Mutex
 	ErrDBInternalError = errors.New("record was not created due to internal error")
 )
 
+const (
+	table = "chapters"
+)
+
 type Chapter struct {
-	Page_id         int64  `json:"page_id"`
-	Title           string `json:"title"`
-	Url             string `json:"url"`
-	Chapter_Pattern string `json:"chapter_pattern"`
-	Append          bool   `json:"append"`
+	PageID         int64  `json:"pageid"`
+	Title          string `json:"title"`
+	URL            string `json:"url"`
+	ChapterPattern string `json:"chapterpattern"`
+	Append         bool   `json:"append"`
 }
 
-type ChapterSQL struct {
-	Page_id         int64        `db:"page_id"`
-	Title           string       `db:"title"`
-	Url             string       `db:"url"`
-	Chapter_Pattern string       `db:"chapter_pattern"`
-	Date_Added      sql.NullTime `db:"date_added"`
-	Append          bool         `db:"append"`
+type SQL struct {
+	PageID         int64        `db:"pageid"`
+	Title          string       `db:"title"`
+	URL            string       `db:"url"`
+	ChapterPattern string       `db:"chapterpattern"`
+	DateAdded      sql.NullTime `db:"dateadded"`
+	Append         bool         `db:"append"`
 }
 
-var selectAllQuery = fmt.Sprintf("SELECT * FROM %s;", table)
+func GetAllChapters(db *sqlx.DB) ([]SQL, error) {
+	var chapters []SQL
+	err := db.Select(&chapters, fmt.Sprintf("SELECT * FROM %s;", table))
 
-func GetAllChapters(db *sqlx.DB) (p []ChapterSQL, err error) {
-	err = db.Select(&p, selectAllQuery)
 	if err != nil {
 		utils.FailOnError("db", err)
 	}
-	return p, err
 
+	return chapters, errors.Unwrap(err)
 }
 
 func (ch Chapter) InsertChapter(db *sqlx.DB) error {
 	mx.Lock()
+
 	_, err := db.NamedExec("INSERT INTO "+table+"(page_id, title, url, chapter_pattern, append) VALUES ((select id from db.pages WHERE id = :page_id), :title, :url, :chapter_pattern, :append);", ch)
+
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
 
 	mx.Unlock()
-	return err
 
+	return errors.Unwrap(err)
 }
 
-func GetChapter(db *sqlx.DB, p string) (ChapterSQL, bool, error) {
+func GetChapter(db *sqlx.DB, p string) (SQL, bool, error) {
+	var res SQL
 
-	var res ChapterSQL
 	mx.Lock()
 	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE url = \"%v\"", p))
 	mx.Unlock()
 
 	if err != nil {
-		return ChapterSQL{}, false, err
+		return SQL{}, false, errors.Unwrap(err)
 	}
 
-	return res, true, err
+	return res, true, errors.Unwrap(err)
 }

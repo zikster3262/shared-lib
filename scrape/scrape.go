@@ -1,6 +1,7 @@
 package scrape
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
@@ -12,14 +13,15 @@ import (
 	"github.com/zikster3262/shared-lib/utils"
 )
 
-func ScapeSource(mp source.SourceSQL) (m []page.Page) {
+func ScapeSource(mangaSource source.SQL) []page.Page {
+	var pages []page.Page
 	// Request the HTML page.
-	res, err := http.Get(mp.Manga_URL)
+	res, err := http.Get(mangaSource.MangaURL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
+
+	if res.StatusCode != http.StatusOK {
 		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
@@ -29,44 +31,46 @@ func ScapeSource(mp source.SourceSQL) (m []page.Page) {
 		log.Fatal(err)
 	}
 
-	// Find the review items
-	doc.Find(mp.Home_Pattern).Each(func(i int, s *goquery.Selection) {
+	defer res.Body.Close()
 
+	// Find the review items
+	doc.Find(mangaSource.HomePattern).Each(func(i int, s *goquery.Selection) {
 		// Fetch page address
-		v, _ := s.Attr("href")
+		hrefAttr, _ := s.Attr("href")
 
 		// Fetch page title
 		t, _ := s.Attr("title")
 
 		// create Page
-		mn := page.Page{
-			Url:             v,
-			Title:           t,
-			Source_Id:       mp.Id,
-			Append:          mp.Append,
-			Chapter_Pattern: mp.Chapter_Pattern,
-			Page_Pattern:    mp.Page_Pattern,
+		mangaPage := page.Page{
+			URL:            hrefAttr,
+			Title:          t,
+			SourceID:       mangaSource.ID,
+			Append:         mangaSource.Append,
+			ChapterPattern: mangaSource.ChapterPattern,
+			PagePattern:    mangaSource.PagePattern,
 		}
 
-		if mp.Append {
-			mn.Url = mp.Manga_URL + v
+		if mangaSource.Append {
+			mangaPage.URL = mangaSource.MangaURL + hrefAttr
 		}
 
-		m = append(m, mn)
+		pages = append(pages, mangaPage)
 
 	})
 
-	return m
+	return pages
 }
 
-func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
+func ScapePage(pgs page.SQL, pageID, sid int64) []page.SQL {
+	var pages []page.SQL
 	// Request the HTML page.
-	res, err := http.Get(p.Url)
+	res, err := http.Get(pgs.URL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
+
+	if res.StatusCode != http.StatusOK {
 		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
@@ -76,35 +80,39 @@ func ScapePage(p page.PageSQL, page_id, sid int64) (m []page.PageSQL) {
 		log.Fatal(err)
 	}
 
-	// Find the review items
-	doc.Find(p.Page_Pattern).Each(func(i int, s *goquery.Selection) {
+	defer res.Body.Close()
 
+	// Find the review items
+	doc.Find(pgs.PagePattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
 
-		mn := page.PageSQL{
-			Id:              page_id,
-			Url:             href,
-			Title:           p.Title,
-			Source_Id:       int(sid),
-			Chapter_Pattern: p.Chapter_Pattern,
-			Append:          p.Append,
+		mangaPage := page.SQL{
+			ID:             pageID,
+			Title:          pgs.Title,
+			URL:            href,
+			SourceID:       int(sid),
+			PagePattern:    "",
+			ChapterPattern: pgs.ChapterPattern,
+			DateAdded:      sql.NullTime{},
+			Append:         pgs.Append,
 		}
 
-		m = append(m, mn)
+		pages = append(pages, mangaPage)
 
 	})
 
-	return m
+	return pages
 }
 
-func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
+func ScapeChapter(cha chapter.Chapter) []img.Image {
+	var images []img.Image
 	// Request the HTML page.
-	res, err := http.Get(cha.Url)
+	res, err := http.Get(cha.URL)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
+
+	if res.StatusCode != http.StatusOK {
 		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
@@ -114,20 +122,23 @@ func ScapeChapter(cha chapter.Chapter) (images []img.Image) {
 		log.Fatal(err)
 	}
 
-	chapter := utils.GetIDFromChapterURL(cha.Url)
+	defer res.Body.Close()
+
+	chapter := utils.GetIDFromChapterURL(cha.URL)
 
 	// Find the review items
-	doc.Find(cha.Chapter_Pattern).Each(func(i int, s *goquery.Selection) {
+	doc.Find(cha.ChapterPattern).Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("src")
 
 		img := img.Image{
 			Title:    cha.Title,
-			Url:      href,
+			URL:      href,
 			Chapter:  chapter,
 			Filename: utils.GetFileName(href),
 		}
 		images = append(images, img)
 
 	})
+
 	return images
 }
