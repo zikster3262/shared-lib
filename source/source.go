@@ -29,10 +29,10 @@ type Source struct {
 
 type SQL struct {
 	ID             int64        `db:"id"`
-	MangaURL       string       `db:"manga_url"`
+	MangaURL       string       `db:"mangaurl"`
 	HomePattern    string       `db:"homepattern"`
 	PagePattern    string       `db:"pagepattern"`
-	ChapterPattern string       `json:"chapterpattern"`
+	ChapterPattern string       `db:"chapterpattern"`
 	DateAdded      sql.NullTime `db:"dateadded"`
 	Append         bool         `db:"append"`
 }
