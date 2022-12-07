@@ -11,50 +11,57 @@ import (
 )
 
 var (
-	table              = "sources"
 	mx                 sync.Mutex
 	ErrDBInternalError = errors.New("record was not created due to internal error")
 )
 
+const (
+	table = "sources"
+)
+
 type Source struct {
-	Manga_URL       string `json:"manga_url"`
-	Home_Pattern    string `json:"home_pattern"`
-	Page_Pattern    string `json:"page_pattern"`
-	Chapter_Pattern string `json:"chapter_pattern"`
-	Append          bool   `json:"append"`
+	MangaURL       string `json:"mangaurl"`
+	HomePattern    string `json:"homepattern"`
+	PagePattern    string `json:"pagepattern"`
+	ChapterPattern string `json:"chapterpattern"`
+	Append         bool   `json:"append"`
 }
 
-type SourceSQL struct {
-	Id              int64        `db:"id"`
-	Manga_URL       string       `db:"manga_url"`
-	Home_Pattern    string       `db:"home_pattern"`
-	Page_Pattern    string       `db:"page_pattern"`
-	Chapter_Pattern string       `json:"chapter_pattern"`
-	Date_Added      sql.NullTime `db:"date_added"`
-	Append          bool         `db:"append"`
+type SQL struct {
+	ID             int64        `db:"id"`
+	MangaURL       string       `db:"mangaurl"`
+	HomePattern    string       `db:"homepattern"`
+	PagePattern    string       `db:"pagepattern"`
+	ChapterPattern string       `db:"chapterpattern"`
+	DateAdded      sql.NullTime `db:"dateadded"`
+	Append         bool         `db:"append"`
 }
 
-var selectAllSourcesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
+// GetAllSources func return all rows in SourceSQL array from page table.
+func GetAllSources(db *sqlx.DB) ([]SQL, error) {
+	var sources []SQL
+	err := db.Select(&sources, fmt.Sprintf("SELECT * FROM %s;", table))
 
-// GetAllSources func return all rows in SourceSQL array from page table
-func GetAllSources(db *sqlx.DB) (p []SourceSQL, err error) {
-	err = db.Select(&p, selectAllSourcesQuery)
 	if err != nil {
 		utils.FailOnError("db", err)
 	}
-	return p, err
 
+	return sources, errors.Unwrap(err)
 }
 
-// Selects Source ID based on ID param
-func GetSourceID(db *sqlx.DB, id int64) (result SourceSQL) {
+// Selects Source ID based on ID param.
+func GetSourceID(db *sqlx.DB, id int64) SQL {
+	var result SQL
+
 	mx.Lock()
 	err := db.Get(&result, fmt.Sprintf("SELECT * FROM "+table+" WHERE id = %d;", id))
+
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
 	}
 
 	mx.Unlock()
+
 	return result
 }
 
@@ -64,17 +71,19 @@ var InsertSourceQuery = "INSERT INTO " + table + "(manga_url, home_pattern, page
 // Returns internal DB error on err
 func InsertSource(db *sqlx.DB, m interface{}) error {
 	_, err := db.NamedExec(InsertSourceQuery, m)
+
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
-	return err
+
+	return errors.Unwrap(err)
 }
 
-var GetSourcePageQuery = "SELECT * FROM " + table + " WHERE manga_url = \"%v\""
+// GetSourcePage function takes sqlx DB struct and parameter string and returns SourceSQL.
+func GetSourcePage(db *sqlx.DB, p string) SQL {
+	var res SQL
+	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE manga_url = \"%v\"", p))
 
-// GetSourcePage function takes sqlx DB struct and parameter string and returns SourceSQL
-func GetSourcePage(db *sqlx.DB, p string) (res SourceSQL) {
-	err := db.Get(&res, fmt.Sprintf(GetSourcePageQuery, p))
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
 	}

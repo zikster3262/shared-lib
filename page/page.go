@@ -11,81 +11,88 @@ import (
 )
 
 var (
-	table              = "pages"
 	mx                 sync.Mutex
 	ErrDBInternalError = errors.New("record was not created due to internal error")
 )
 
+const (
+	table = "pages"
+)
+
 type Page struct {
-	Title           string `json:"title"`
-	Url             string `json:"url"`
-	Source_Id       int64  `json:"source_id"`
-	Page_Pattern    string `json:"page_pattern"`
-	Chapter_Pattern string `json:"chapter_pattern"`
-	Append          bool   `json:"append"`
+	Title          string `json:"title"`
+	URL            string `json:"url"`
+	SourceID       int64  `json:"sourceid"`
+	PagePattern    string `json:"pagepattern"`
+	ChapterPattern string `json:"chapterpattern"`
+	Append         bool   `json:"append"`
 }
 
-type PageSQL struct {
-	Id              int64        `db:"id"`
-	Title           string       `db:"title"`
-	Url             string       `db:"url"`
-	Source_Id       int          `db:"source_id"`
-	Page_Pattern    string       `db:"page_pattern"`
-	Chapter_Pattern string       `json:"chapter_pattern"`
-	Date_Added      sql.NullTime `db:"date_added"`
-	Append          bool         `db:"append"`
+type SQL struct {
+	ID             int64        `db:"id"`
+	Title          string       `db:"title"`
+	URL            string       `db:"url"`
+	SourceID       int          `db:"sourceid"`
+	PagePattern    string       `db:"pagepattern"`
+	ChapterPattern string       `json:"chapterpattern"`
+	DateAdded      sql.NullTime `db:"dateadded"`
+	Append         bool         `db:"append"`
 }
 
-var selectAllPagesQuery = fmt.Sprintf("SELECT * FROM %s;", table)
+// GetAllPage func return all rows in SQL array from page table.
+func GetAllPages(db *sqlx.DB) ([]SQL, error) {
+	var pages []SQL
 
-// GetAllPage func return all rows in PageSQL array from page table
-func GetAllPages(db *sqlx.DB) (p []PageSQL, err error) {
+	err := db.Select(&pages, fmt.Sprintf("SELECT * FROM %s;", table))
 
-	err = db.Select(&p, selectAllPagesQuery)
 	if err != nil {
 		utils.FailOnError("db", err)
 	}
-	return p, err
 
+	return pages, errors.Unwrap(err)
 }
 
-var selectPageQuery = "SELECT * FROM " + table + " WHERE id = %v;"
+// Selects Page ID based on ID param.
+func GetPageID(db *sqlx.DB, id int64) SQL {
+	var result SQL
 
-// Selects Page ID based on ID param
-func GetPageID(db *sqlx.DB, id int64) (result PageSQL) {
 	mx.Lock()
-	err := db.Get(&result, fmt.Sprintf(selectPageQuery, id))
+	err := db.Get(&result, fmt.Sprintf("SELECT * FROM "+table+" WHERE id = %v;", id))
+
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
 	}
 
 	mx.Unlock()
+
 	return result
 }
 
 // InsertPage inserts interface input into Page database table with sqlx DB struct
-// Returns internal DB error on err
+// Returns internal DB error on err.
 func (p Page) InsertPage(db *sqlx.DB) error {
 	mx.Lock()
+
 	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, source_id, append, chapter_pattern) VALUES (:title, :url, (select id from db.sources WHERE id = :source_id), :append, :chapter_pattern);", p)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}
 	mx.Unlock()
-	return err
+
+	return errors.Unwrap(err)
 }
 
-// GetPage function takes sqlx DB struct and parameter string and returns PageSQL
-func GetPage(db *sqlx.DB, p string) (PageSQL, bool, error) {
+// GetPage function takes sqlx DB struct and parameter string and returns SQL
+func GetPage(db *sqlx.DB, p string) (SQL, bool, error) {
+	var res SQL
 
-	var res PageSQL
 	mx.Lock()
 	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE title = \"%v\"", p))
 	mx.Unlock()
 
 	if err != nil {
-		return PageSQL{}, false, err
+		return SQL{}, false, errors.Unwrap(err)
 	}
 
-	return res, true, err
+	return res, true, errors.Unwrap(err)
 }

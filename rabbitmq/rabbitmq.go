@@ -15,30 +15,34 @@ var (
 	ErrNoRabbitMQAddressFound = errors.New("no rabbitMQ address provided")
 )
 
-type RabbitMQClient struct {
+const (
+	timeout = 5
+)
+
+type Client struct {
 	conn *amqp.Connection
 }
 
-func CreateRabbitMQClient() *RabbitMQClient {
-
+func CreateClient() *Client {
 	conn, err := amqp.Dial(os.Getenv("RABBITMQ_ADDRESS"))
 	utils.FailOnError("rabbitmq", err)
 
 	utils.LogWithInfo("rabbitmq", "connected to rabbitMQ")
-	return &RabbitMQClient{
+
+	return &Client{
 		conn: conn,
 	}
 }
 
-func (r *RabbitMQClient) CreateChannel() *amqp.Channel {
-	ch, err := r.conn.Channel()
+func (rmq *Client) CreateChannel() *amqp.Channel {
+	ch, err := rmq.conn.Channel()
 	utils.FailOnError("rabbitmq", err)
+
 	return ch
 }
 
 func PublishMessage(channel *amqp.Channel, name string, body []byte) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout*time.Second)
 	defer cancel()
 
 	err := channel.PublishWithContext(ctx,
@@ -47,16 +51,27 @@ func PublishMessage(channel *amqp.Channel, name string, body []byte) error {
 		false, // mandatory
 		false, // immediate
 		amqp.Publishing{
-			ContentType:  "application/json",
-			Body:         body,
-			DeliveryMode: amqp.Persistent,
+			Headers:         map[string]interface{}{},
+			ContentType:     "application/json",
+			ContentEncoding: "",
+			DeliveryMode:    amqp.Persistent,
+			Priority:        0,
+			CorrelationId:   "",
+			ReplyTo:         "",
+			Expiration:      "",
+			MessageId:       "",
+			Timestamp:       time.Time{},
+			Type:            "",
+			UserId:          "",
+			AppId:           "",
+			Body:            body,
 		})
 	utils.FailOnError("rabbitmq", err)
-	return err
+
+	return errors.Unwrap(err)
 }
 
 func Consume(channel *amqp.Channel, name string) (<-chan amqp.Delivery, error) {
-
 	msgs, err := channel.Consume(
 		name,  // queue
 		"",    // consumer
@@ -70,16 +85,14 @@ func Consume(channel *amqp.Channel, name string) (<-chan amqp.Delivery, error) {
 	for {
 		_, ok := <-msgs
 		if !ok {
-			return nil, nil
+			return nil, errors.Unwrap(err)
 		} else {
-			return msgs, err
+			return msgs, errors.Unwrap(err)
 		}
 	}
-
 }
 
-func (rmq *RabbitMQClient) Close() {
-
+func (rmq *Client) Close() {
 	if rmq != nil {
 		rmq.Close()
 	}

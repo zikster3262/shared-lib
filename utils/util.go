@@ -23,6 +23,7 @@ func GetIDFromChapterURL(url string) string {
 
 	re := regexp.MustCompile("[0-9]+")
 	res := re.FindAllString(url, -1)
+
 	if len(res) > 1 {
 		return res[len(res)-1]
 	} else {
