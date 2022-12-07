@@ -73,7 +73,7 @@ func GetPageID(db *sqlx.DB, id int64) SQL {
 func (p Page) InsertPage(db *sqlx.DB) error {
 	mx.Lock()
 
-	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, source_id, append, chapter_pattern) VALUES (:title, :url, (select id from db.sources WHERE id = :source_id), :append, :chapter_pattern);", p)
+	_, err := db.NamedExec("INSERT INTO "+table+"(title, url, sourceid, append, chapterpattern) VALUES (:title, :url, (select id from db.sources WHERE id = :sourceid), :append, :chapterpattern);", p)
 	if err != nil {
 		utils.FailOnError("db", ErrDBInternalError)
 	}

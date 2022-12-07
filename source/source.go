@@ -65,7 +65,7 @@ func GetSourceID(db *sqlx.DB, id int64) SQL {
 	return result
 }
 
-var InsertSourceQuery = "INSERT INTO " + table + "(manga_url, home_pattern, page_pattern, append, chapter_pattern) VALUES (:manga_url, :home_pattern, :page_pattern, :append, :chapter_pattern);"
+var InsertSourceQuery = "INSERT INTO " + table + "(mangaurl, homepattern, pagepattern, append, chapterpattern) VALUES (:mangaurl, :homepattern, :pagepattern, :append, :chapterpattern);"
 
 // InsertSource inserts interface input into source database table with sqlx DB struct
 // Returns internal DB error on err
@@ -82,7 +82,7 @@ func InsertSource(db *sqlx.DB, m interface{}) error {
 // GetSourcePage function takes sqlx DB struct and parameter string and returns SourceSQL.
 func GetSourcePage(db *sqlx.DB, p string) SQL {
 	var res SQL
-	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE manga_url = \"%v\"", p))
+	err := db.Get(&res, fmt.Sprintf("SELECT * FROM "+table+" WHERE mangaurl = \"%v\"", p))
 
 	if err != nil {
 		utils.LogWithInfo("db", "record does not exists in the database")
